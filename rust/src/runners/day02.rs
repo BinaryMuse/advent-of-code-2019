@@ -9,6 +9,19 @@ pub fn run(input: String, _args: &[String]) {
   program.run();
 
   println!("Part 1: Position 0 is {}", program.get_at(0));
+
+  for noun in 1..=99 {
+    for verb in 1..=99 {
+      let mut program = Program::from_str(&input).unwrap();
+      program.replace_at(1, noun);
+      program.replace_at(2, verb);
+      program.run();
+      if program.get_at(0) == 19_690_720 {
+        println!("Part 2: 100 * noun + verb = {}", 100 * noun + verb);
+        return;
+      }
+    }
+  }
 }
 
 struct Program {
