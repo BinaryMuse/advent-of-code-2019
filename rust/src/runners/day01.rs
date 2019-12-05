@@ -1,7 +1,4 @@
-use super::common;
-
-pub fn run(_args: &[String]) {
-  let input = common::get_input("01").expect("Expected input for day 01");
+pub fn run(input: String, _args: &[String]) {
   let masses: Vec<i32> = input.lines().map(|line| line.parse::<i32>().expect("could not parse line into number")).collect();
 
   let total_fuel = masses.iter().fold(0, |acc, mass| acc + fuel_for_mass(*mass));

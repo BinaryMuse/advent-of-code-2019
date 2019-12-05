@@ -1,16 +1,24 @@
 mod common;
 mod day01;
+mod day02;
 
-type Runner = Box<dyn Fn(&[String])>;
+type Runner = Box<dyn Fn(String, &[String])>;
 
 pub fn run_day(day: u32, args: &[String]) {
     let runner = get_runner(day).unwrap_or_else(|| panic!("No runner found for day {}", day));
-    runner(args);
+    let input_file = if day < 10 {
+        format!("0{}", day)
+    } else {
+        format!("{}", day)
+    };
+    let input = common::get_input(&input_file).expect("Couldn't find input");
+    runner(input, args);
 }
 
 fn get_runner(day: u32) -> Option<Runner> {
     match day {
         1 => Some(Box::new(day01::run)),
+        2 => Some(Box::new(day02::run)),
         _ => None
     }
 }
