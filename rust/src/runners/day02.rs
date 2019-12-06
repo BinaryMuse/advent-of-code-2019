@@ -81,6 +81,7 @@ impl Program {
     }
   }
 
+  #[cfg(test)]
   fn as_str(&self) -> String {
     self.code.iter().map(|&n| n.to_string()).collect::<Vec<_>>().join(",")
   }

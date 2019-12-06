@@ -5,3 +5,4 @@ authors = ["Michelle Tilley <michelle@michelletilley.net>"]
 edition = "2018"
 
 [dependencies]
+custom_error = "1.7.1"
