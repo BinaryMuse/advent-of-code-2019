@@ -1,6 +1,7 @@
 use std::str::FromStr;
 use std::num::ParseIntError;
 use std::convert::{TryFrom, TryInto};
+use std::collections::LinkedList;
 use regex::Regex;
 use custom_error::custom_error;
 use voca_rs::*;
@@ -41,7 +42,7 @@ impl Opcode {
     match self {
       Opcode::Add       => (3, true),
       Opcode::Multiply  => (3, true),
-      Opcode::Input     => (1, false),
+      Opcode::Input     => (1, true),
       Opcode::Output    => (1, false),
       Opcode::Exit      => (0, false),
     }
@@ -81,7 +82,7 @@ impl FromStr for Instruction {
   type Err = InstructionError;
 
   fn from_str(s: &str) -> Result<Self, Self::Err> {
-    let re = Regex::new(r"^(\d*)(\d{2})$").unwrap();
+    let re = Regex::new(r"^(-?\d*)(-?\d{2})$").unwrap();
     let padded = &manipulate::pad_left(s, 2, "0");
     let captures = re.captures(padded).unwrap();
 
@@ -109,7 +110,9 @@ impl FromStr for Instruction {
 #[derive(Debug)]
 pub struct Computer {
   position: usize,
-  code: Vec<i32>
+  code: Vec<i32>,
+  input_queue: LinkedList<i32>,
+  output: LinkedList<i32>
 }
 
 impl FromStr for Computer {
@@ -117,11 +120,19 @@ impl FromStr for Computer {
 
   fn from_str(s: &str) -> Result<Self, Self::Err> {
     let code = s.split(',').map(|s| s.parse::<i32>()).collect::<Result<_, _>>()?;
-    Ok(Self { position: 0, code })
+    Ok(Self { position: 0, code, input_queue: LinkedList::new(), output: LinkedList::new() })
   }
 }
 
 impl Computer {
+  pub fn input(&mut self, input: i32) {
+    self.input_queue.push_back(input);
+  }
+
+  pub fn get_output(&self) -> &LinkedList<i32> {
+    &self.output
+  }
+
   pub fn get_at(&self, param: Param, position: usize) -> i32 {
     match param {
       Param::Position  => self.code[self.code[position] as usize],
@@ -133,10 +144,8 @@ impl Computer {
     self.code[position] = value;
   }
 
-  fn params3(&self, params: &[Param], opcode_pos: usize) -> (i32, i32, i32) {
-    assert!(params.len() == 3);
-
-    let items = params.iter().enumerate().map(|(idx, p)| {
+  fn params_vec(&self, params: &[Param], opcode_pos: usize) -> Vec<i32> {
+    params.iter().enumerate().map(|(idx, p)| {
       match *p {
         Param::Immediate => self.code[opcode_pos + idx + 1],
         Param::Position  => {
@@ -144,14 +153,20 @@ impl Computer {
           self.code[pos as usize]
         }
       }
-    }).collect::<Vec<_>>();
-
-    (items[0], items[1], items[2])
+    }).collect::<Vec<_>>()
   }
 
-  // fn get_params3(params: &Vec<Param>) -> (i32, i32, i32) {
+  fn params1(&self, params: &[Param], opcode_pos: usize) -> i32 {
+    assert!(params.len() == 1);
+    let items = self.params_vec(params, opcode_pos);
+    items[0]
+  }
 
-  // }
+  fn params3(&self, params: &[Param], opcode_pos: usize) -> (i32, i32, i32) {
+    assert!(params.len() == 3);
+    let items = self.params_vec(params, opcode_pos);
+    (items[0], items[1], items[2])
+  }
 
   pub fn run(&mut self) -> Result<(), InstructionError> {
     let mut running = true;
@@ -160,20 +175,26 @@ impl Computer {
       match instr.opcode {
         Opcode::Add => {
           let (input_one, input_two, output) = self.params3(&instr.parameters, self.position);
-
           let num = input_one + input_two;
           self.set_at(output as usize, num);
         },
         Opcode::Multiply => {
           let (input_one, input_two, output) = self.params3(&instr.parameters, self.position);
-
           let num = input_one * input_two;
           self.set_at(output as usize, num);
         },
+        Opcode::Input => {
+          let input = self.input_queue.pop_front().expect("Asked for an input but nothing in the queue!");
+          let pos = self.params1(&instr.parameters, self.position);
+          self.set_at(pos as usize, input);
+        },
+        Opcode::Output => {
+          let output = self.params1(&instr.parameters, self.position);
+          self.output.push_back(output);
+        },
         Opcode::Exit => {
           running = false;
-        },
-        _ => panic!("unexpected opcode!")
+        }
       };
       self.position += instr.opcode.param_spec().0 + 1;
     };
@@ -204,4 +225,21 @@ fn test_computer() {
   let mut p4 = Computer::from_str("2,4,4,5,99,0").unwrap();
   p4.run().expect("p4 to run successfully");
   assert_eq!(p4.as_str(), "2,4,4,5,99,9801");
+}
+
+#[test]
+fn test_parameter_modes() {
+  let mut c1 = Computer::from_str("1002,4,3,4,33").unwrap();
+  c1.run().expect("p4 to run successfully");
+  assert_eq!(c1.as_str(), "1002,4,3,4,99");
+}
+
+#[test]
+fn test_input_output() {
+  let mut c1 = Computer::from_str("3,0,4,0,99").unwrap();
+  c1.input(42);
+  c1.run().expect("p4 to run successfully");
+  assert_eq!(c1.as_str(), "42,0,4,0,99");
+  assert_eq!(c1.output.pop_front(), Some(42));
+  assert_eq!(c1.output.pop_front(), None);
 }
