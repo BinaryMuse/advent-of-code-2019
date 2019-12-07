@@ -96,20 +96,20 @@ impl FromStr for Instruction {
   fn from_str(s: &str) -> Result<Self, Self::Err> {
     let re = Regex::new(r"^(-?\d*)(-?\d{2})$").unwrap();
     let padded = &manipulate::pad_left(s, 2, "0");
-    let captures = re.captures(padded).unwrap();
+    let captures = re.captures(padded)
+      .ok_or(InstructionError::BadInput{input: s.to_string()})?;
 
     match (captures.get(1), captures.get(2)) {
-      (Some(params_str), Some(opcode_str)) => {
-        let opcode = opcode_str.as_str().parse::<Opcode>()?;
-        let (param_count, force_last) = opcode.param_spec();
-        let mut chars = params_str.as_str().chars().rev();
+      (Some(params_match), Some(opcode_match)) => {
+        let opcode = opcode_match.as_str().parse::<Opcode>()?;
+        let (param_count, force_final_immediate) = opcode.param_spec();
+        let mut chars = params_match.as_str().chars().rev();
         let mut parameters = Vec::with_capacity(param_count);
         for _ in 0..param_count {
           parameters.push(Param::from_char(chars.next().unwrap_or('0'))?);
         }
-        if force_last {
-          parameters.pop();
-          parameters.push(Param::Immediate);
+        if force_final_immediate {
+          *parameters.last_mut().unwrap() = Param::Immediate;
         }
 
         Ok(Self { opcode, parameters })
