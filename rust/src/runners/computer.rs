@@ -14,12 +14,16 @@ custom_error!{pub InstructionError
 
 #[derive(Copy, Clone, Debug)]
 pub enum Opcode {
-  Add,        // 01
-  Multiply,   // 02
-  Input,      // 03
-  Output,     // 04
+  Add,          // 01
+  Multiply,     // 02
+  Input,        // 03
+  Output,       // 04
+  JumpIfTrue,   // 05
+  JumpIfFalse,  // 06
+  LessThan,     // 07
+  Equals,       // 08
 
-  Exit        // 99
+  Exit          // 99
 }
 
 impl FromStr for Opcode {
@@ -31,6 +35,10 @@ impl FromStr for Opcode {
       "02" => Ok(Opcode::Multiply),
       "03" => Ok(Opcode::Input),
       "04" => Ok(Opcode::Output),
+      "05" => Ok(Opcode::JumpIfTrue),
+      "06" => Ok(Opcode::JumpIfFalse),
+      "07" => Ok(Opcode::LessThan),
+      "08" => Ok(Opcode::Equals),
       "99" => Ok(Opcode::Exit),
       _    => Err(InstructionError::BadOpcode{input: s.to_string()})
     }
@@ -40,11 +48,15 @@ impl FromStr for Opcode {
 impl Opcode {
   pub fn param_spec(self) -> (usize, bool) {
     match self {
-      Opcode::Add       => (3, true),
-      Opcode::Multiply  => (3, true),
-      Opcode::Input     => (1, true),
-      Opcode::Output    => (1, false),
-      Opcode::Exit      => (0, false),
+      Opcode::Add         => (3, true),
+      Opcode::Multiply    => (3, true),
+      Opcode::Input       => (1, true),
+      Opcode::Output      => (1, false),
+      Opcode::JumpIfTrue  => (2, false),
+      Opcode::JumpIfFalse => (2, false),
+      Opcode::LessThan    => (3, true),
+      Opcode::Equals      => (3, true),
+      Opcode::Exit        => (0, false),
     }
   }
 }
@@ -107,7 +119,7 @@ impl FromStr for Instruction {
   }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Computer {
   position: usize,
   code: Vec<i32>,
@@ -162,6 +174,12 @@ impl Computer {
     items[0]
   }
 
+  fn params2(&self, params: &[Param], opcode_pos: usize) -> (i32, i32) {
+    assert!(params.len() == 2);
+    let items = self.params_vec(params, opcode_pos);
+    (items[0], items[1])
+  }
+
   fn params3(&self, params: &[Param], opcode_pos: usize) -> (i32, i32, i32) {
     assert!(params.len() == 3);
     let items = self.params_vec(params, opcode_pos);
@@ -171,6 +189,7 @@ impl Computer {
   pub fn run(&mut self) -> Result<(), InstructionError> {
     let mut running = true;
     while running {
+      let mut auto_pos = true;
       let instr: Instruction = self.get_at(Param::Immediate, self.position).try_into()?;
       match instr.opcode {
         Opcode::Add => {
@@ -192,11 +211,35 @@ impl Computer {
           let output = self.params1(&instr.parameters, self.position);
           self.output.push_back(output);
         },
+        Opcode::JumpIfTrue => {
+          let (check, new_pointer) = self.params2(&instr.parameters, self.position);
+          if check != 0 {
+            self.position = new_pointer as usize;
+            auto_pos = false;
+          }
+        },
+        Opcode::JumpIfFalse => {
+          let (check, new_pointer) = self.params2(&instr.parameters, self.position);
+          if check == 0 {
+            self.position = new_pointer as usize;
+            auto_pos = false;
+          }
+        },
+        Opcode::LessThan => {
+          let (first, second, pos) = self.params3(&instr.parameters, self.position);
+          let value = if first < second { 1 } else { 0 };
+          self.set_at(pos as usize, value);
+        },
+        Opcode::Equals => {
+          let (first, second, pos) = self.params3(&instr.parameters, self.position);
+          let value = if first == second { 1 } else { 0 };
+          self.set_at(pos as usize, value);
+        },
         Opcode::Exit => {
           running = false;
         }
       };
-      self.position += instr.opcode.param_spec().0 + 1;
+      if auto_pos { self.position += instr.opcode.param_spec().0 + 1 }
     };
 
     Ok(())
@@ -242,4 +285,29 @@ fn test_input_output() {
   assert_eq!(c1.as_str(), "42,0,4,0,99");
   assert_eq!(c1.output.pop_front(), Some(42));
   assert_eq!(c1.output.pop_front(), None);
+}
+
+#[test]
+fn test_jumps_compares() {
+  let mut c1 = Computer::from_str(
+    &vec![
+      "3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,".to_string(),
+      "1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104,".to_string(),
+      "999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99".to_string()
+    ].join("")
+  ).unwrap();
+  let mut c2 = c1.clone();
+  let mut c3 = c1.clone();
+
+  c1.input(7);
+  c2.input(8);
+  c3.input(9);
+
+  c1.run().expect("Expected computer one to run");
+  c2.run().expect("Expected computer two to run");
+  c3.run().expect("Expected computer three to run");
+
+  assert_eq!(c1.get_output().front(), Some(&999));
+  assert_eq!(c2.get_output().front(), Some(&1000));
+  assert_eq!(c3.get_output().front(), Some(&1001));
 }
