@@ -119,6 +119,7 @@ impl FromStr for Instruction {
   }
 }
 
+
 #[derive(Clone, Debug)]
 pub struct Computer {
   position: usize,
