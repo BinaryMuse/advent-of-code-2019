@@ -1,6 +1,7 @@
 use clap::Parser;
 use std::{error::Error, fs, path::Path};
 
+mod computer;
 mod days;
 mod util;
 
@@ -19,6 +20,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     match day.as_str() {
         "01" => days::day01::run(input),
+        "02" => days::day02::run(input),
         _ => panic!("Day not implemented"),
     };
 
