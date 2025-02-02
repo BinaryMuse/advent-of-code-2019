@@ -20,40 +20,29 @@ impl Instruction {
     ) -> Option<Instruction> {
         // consume the opcode
         mem.next().unwrap();
-        let mut modes = opcode.param_modes.into_iter();
         if opcode.code == 1 {
-            let p1 = Self::get_param(modes.next(), mem.next());
-            let p2 = Self::get_param(modes.next(), mem.next());
-            let p3 = Self::get_param(modes.next(), mem.next());
+            let (p1, p2, p3) = Self::get_params3(&opcode.param_modes, mem);
             Some(Self::Add(p1, p2, p3))
         } else if opcode.code == 2 {
-            let p1 = Self::get_param(modes.next(), mem.next());
-            let p2 = Self::get_param(modes.next(), mem.next());
-            let p3 = Self::get_param(modes.next(), mem.next());
+            let (p1, p2, p3) = Self::get_params3(&opcode.param_modes, mem);
             Some(Self::Mult(p1, p2, p3))
         } else if opcode.code == 3 {
-            let p1 = Self::get_param(modes.next(), mem.next());
+            let p1 = Self::get_params1(&opcode.param_modes, mem);
             Some(Self::Input(p1))
         } else if opcode.code == 4 {
-            let p1 = Self::get_param(modes.next(), mem.next());
+            let p1 = Self::get_params1(&opcode.param_modes, mem);
             Some(Self::Output(p1))
         } else if opcode.code == 5 {
-            let p1 = Self::get_param(modes.next(), mem.next());
-            let p2 = Self::get_param(modes.next(), mem.next());
+            let (p1, p2) = Self::get_params2(&opcode.param_modes, mem);
             Some(Self::JumpIfTrue(p1, p2))
         } else if opcode.code == 6 {
-            let p1 = Self::get_param(modes.next(), mem.next());
-            let p2 = Self::get_param(modes.next(), mem.next());
+            let (p1, p2) = Self::get_params2(&opcode.param_modes, mem);
             Some(Self::JumpIfFalse(p1, p2))
         } else if opcode.code == 7 {
-            let p1 = Self::get_param(modes.next(), mem.next());
-            let p2 = Self::get_param(modes.next(), mem.next());
-            let p3 = Self::get_param(modes.next(), mem.next());
+            let (p1, p2, p3) = Self::get_params3(&opcode.param_modes, mem);
             Some(Self::LessThan(p1, p2, p3))
         } else if opcode.code == 8 {
-            let p1 = Self::get_param(modes.next(), mem.next());
-            let p2 = Self::get_param(modes.next(), mem.next());
-            let p3 = Self::get_param(modes.next(), mem.next());
+            let (p1, p2, p3) = Self::get_params3(&opcode.param_modes, mem);
             Some(Self::Equals(p1, p2, p3))
         } else if opcode.code == 99 {
             Some(Self::Stop)
@@ -62,8 +51,29 @@ impl Instruction {
         }
     }
 
-    fn get_param(mode: Option<usize>, mem: Option<&isize>) -> Param {
-        let mode = mode.unwrap_or(0);
+    fn get_params1(modes: &[usize], mut mem: std::slice::Iter<'_, isize>) -> Param {
+        let mut modes = modes.iter();
+        let p1 = Self::get_param(modes.next(), mem.next());
+        p1
+    }
+
+    fn get_params2(modes: &[usize], mut mem: std::slice::Iter<'_, isize>) -> (Param, Param) {
+        let mut modes = modes.iter();
+        let p1 = Self::get_param(modes.next(), mem.next());
+        let p2 = Self::get_param(modes.next(), mem.next());
+        (p1, p2)
+    }
+
+    fn get_params3(modes: &[usize], mut mem: std::slice::Iter<'_, isize>) -> (Param, Param, Param) {
+        let mut modes = modes.iter();
+        let p1 = Self::get_param(modes.next(), mem.next());
+        let p2 = Self::get_param(modes.next(), mem.next());
+        let p3 = Self::get_param(modes.next(), mem.next());
+        (p1, p2, p3)
+    }
+
+    fn get_param(mode: Option<&usize>, mem: Option<&isize>) -> Param {
+        let mode = *mode.unwrap_or(&0);
         if mode == 0 {
             Param::Pos(*mem.unwrap() as usize)
         } else {
