@@ -1,23 +1,23 @@
 use std::ops::{Deref, DerefMut};
 
 #[derive(Clone, Debug)]
-pub(crate) struct Memory(Vec<usize>);
+pub(crate) struct Memory(Vec<isize>);
 
 impl Memory {
-    pub fn new(data: Vec<usize>) -> Self {
+    pub fn new(data: Vec<isize>) -> Self {
         Self(data)
     }
 }
 
 impl From<String> for Memory {
     fn from(s: String) -> Self {
-        let data: Vec<usize> = s.split(",").map(|s| s.parse::<usize>().unwrap()).collect();
+        let data: Vec<isize> = s.split(",").map(|s| s.parse::<isize>().unwrap()).collect();
         Self::new(data)
     }
 }
 
 impl Deref for Memory {
-    type Target = Vec<usize>;
+    type Target = Vec<isize>;
 
     fn deref(&self) -> &Self::Target {
         &self.0

@@ -21,6 +21,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     match day.as_str() {
         "01" => days::day01::run(input),
         "02" => days::day02::run(input),
+        "05" => days::day05::run(input),
         _ => panic!("Day not implemented"),
     };
 
