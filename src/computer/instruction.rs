@@ -1,4 +1,4 @@
-use super::{memory::Memory, Computer};
+use super::Computer;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum Instruction {
