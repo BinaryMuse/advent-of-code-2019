@@ -3,6 +3,7 @@ use std::{error::Error, fs, path::Path};
 
 pub mod computer;
 mod days;
+pub mod grid;
 pub mod util;
 
 #[derive(Parser, Debug)]
@@ -25,6 +26,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         "06" => days::day06::run(input),
         "07" => days::day07::run(input),
         "09" => days::day09::run(input),
+        "11" => days::day11::run(input),
         _ => panic!("Day not implemented"),
     };
 
