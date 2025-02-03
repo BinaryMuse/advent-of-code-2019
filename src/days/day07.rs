@@ -92,11 +92,9 @@ impl AmpSet {
                     } else {
                         return last_output.unwrap_or(0);
                     }
-                } else {
-                    if let Some(output) = computer.next_output() {
-                        next_input = Some(output);
-                        last_output = Some(output as usize);
-                    }
+                } else if let Some(output) = computer.next_output() {
+                    next_input = Some(output);
+                    last_output = Some(output as usize);
                 }
             }
         }

@@ -46,14 +46,12 @@ impl Orbits {
     fn count_orbits_for(&self, orbiter: &str, cache: &mut HashMap<String, usize>) -> usize {
         if cache.contains_key(orbiter) {
             *cache.get(orbiter).unwrap()
+        } else if let Some(parent) = self.data.get(orbiter) {
+            let count = 1 + self.count_orbits_for(parent, cache);
+            cache.insert(orbiter.into(), count);
+            count
         } else {
-            if let Some(parent) = self.data.get(orbiter) {
-                let count = 1 + self.count_orbits_for(parent, cache);
-                cache.insert(orbiter.into(), count);
-                count
-            } else {
-                0
-            }
+            0
         }
     }
 

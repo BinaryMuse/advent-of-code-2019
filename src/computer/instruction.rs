@@ -57,8 +57,7 @@ impl Instruction {
 
     fn get_params1(modes: &[usize], mut mem: std::slice::Iter<'_, isize>) -> Param {
         let mut modes = modes.iter();
-        let p1 = Self::get_param(modes.next(), mem.next());
-        p1
+        Self::get_param(modes.next(), mem.next())
     }
 
     fn get_params2(modes: &[usize], mut mem: std::slice::Iter<'_, isize>) -> (Param, Param) {
@@ -101,7 +100,7 @@ impl From<usize> for Opcode {
 
         while copy > 0 {
             let n = copy % 10;
-            copy = copy / 10;
+            copy /= 10;
             digits.push(n);
         }
 

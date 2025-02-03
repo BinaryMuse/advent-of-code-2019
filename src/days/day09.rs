@@ -4,13 +4,13 @@ pub(crate) fn run(input: String) {
     let mut computer = Computer::new(input.clone().into());
     computer.push_input(1);
     computer.run();
-    let result = computer.get_output().last().unwrap().clone();
+    let result = *computer.get_output().last().unwrap();
     println!("Part 1: {}", result);
 
     let mut computer = Computer::new(input.clone().into());
     computer.push_input(2);
     computer.run();
-    let result = computer.get_output().last().unwrap().clone();
+    let result = *computer.get_output().last().unwrap();
     println!("Part 2: {}", result);
 }
 

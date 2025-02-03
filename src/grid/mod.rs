@@ -42,7 +42,7 @@ impl<V: Clone + Default> Grid<V> {
     pub fn insert<C: Borrow<Cell>>(&mut self, cell: &C, data: V) -> Option<V> {
         let cell = cell.borrow();
         self.extent.contain(&cell);
-        self.data.insert(cell.clone(), data)
+        self.data.insert(*cell, data)
     }
 
     pub fn get<C: Borrow<Cell>>(&self, cell: &C) -> Option<&V> {
@@ -52,7 +52,7 @@ impl<V: Clone + Default> Grid<V> {
 
     pub fn rows_iter(&self) -> RowsIter<V> {
         RowsIter {
-            grid: &self,
+            grid: self,
             current_y: self.extent.north,
             end_y: self.extent.south,
             west: self.extent.west,

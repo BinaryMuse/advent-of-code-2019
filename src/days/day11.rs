@@ -32,7 +32,7 @@ pub(crate) fn run(input: String) {
     println!("Part 2 ({}):", painted.len());
 
     for row in grid.rows_iter() {
-        print!("\n");
+        println!();
         for painted in row {
             match painted {
                 Some(true) => print!("#"),
@@ -50,7 +50,7 @@ fn start_robot(
     painted: &mut HashSet<Cell>,
     visited: &mut HashSet<Cell>,
 ) {
-    while computer.is_halted() == false {
+    while !computer.is_halted() {
         let current_color = painted.get(&robot.position).map(|_| 1).unwrap_or(0);
         computer.push_input(current_color);
         computer.run();

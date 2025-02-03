@@ -28,7 +28,7 @@ fn fuel_for_module(mass: u32) -> u32 {
 fn fuel_for_module_alt(mass: u32) -> u32 {
     let fuel = fuel_for_module(mass);
     let fuel_for_fuel = fuel_for_module(fuel);
-    if fuel_for_fuel <= 0 {
+    if fuel_for_fuel == 0 {
         fuel
     } else {
         fuel + fuel_for_fuel + fuel_for_module_alt(fuel_for_fuel)

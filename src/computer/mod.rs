@@ -45,7 +45,7 @@ impl Computer {
     }
 
     pub fn get_output(&self) -> Vec<isize> {
-        self.output.iter().map(|n| *n).collect()
+        self.output.iter().copied().collect()
     }
 
     pub fn next_output(&mut self) -> Option<isize> {
@@ -85,76 +85,73 @@ impl Computer {
     fn execute_instr(&mut self, instruction: Instruction) {
         match instruction {
             Instruction::Add(p1, p2, p3) => {
-                let op1 = p1.value(&self);
-                let op2 = p2.value(&self);
+                let op1 = p1.value(self);
+                let op2 = p2.value(self);
                 let result = op1 + op2;
-                self.set_memory(p3.as_pos(&self), result);
+                self.set_memory(p3.as_pos(self), result);
                 self.pointer += 4;
             }
             Instruction::Mult(p1, p2, p3) => {
-                let op1 = p1.value(&self);
-                let op2 = p2.value(&self);
+                let op1 = p1.value(self);
+                let op2 = p2.value(self);
                 let result = op1 * op2;
-                self.set_memory(p3.as_pos(&self), result);
+                self.set_memory(p3.as_pos(self), result);
                 self.pointer += 4;
             }
             Instruction::Input(p1) => {
                 if let Some(value) = self.input.pop_front() {
-                    self.set_memory(p1.as_pos(&self), value);
+                    self.set_memory(p1.as_pos(self), value);
                     self.pointer += 2;
                 } else {
                     self.yielded = true;
-                    return ();
                 }
             }
             Instruction::Output(p1) => {
-                let value = p1.value(&self);
+                let value = p1.value(self);
                 self.output.push_back(value);
                 self.pointer += 2;
 
                 if self.yeild_on_output {
                     self.yielded = true;
-                    return ();
                 }
             }
             Instruction::JumpIfTrue(p1, p2) => {
-                let value = p1.value(&self);
+                let value = p1.value(self);
                 if value != 0 {
-                    self.pointer = p2.value(&self) as usize;
+                    self.pointer = p2.value(self) as usize;
                 } else {
-                    self.pointer += 3
+                    self.pointer += 3;
                 }
             }
             Instruction::JumpIfFalse(p1, p2) => {
-                let value = p1.value(&self);
+                let value = p1.value(self);
                 if value == 0 {
-                    self.pointer = p2.value(&self) as usize;
+                    self.pointer = p2.value(self) as usize;
                 } else {
-                    self.pointer += 3
+                    self.pointer += 3;
                 }
             }
             Instruction::LessThan(p1, p2, p3) => {
-                let val1 = p1.value(&self);
-                let val2 = p2.value(&self);
+                let val1 = p1.value(self);
+                let val2 = p2.value(self);
                 let out = if val1 < val2 { 1 } else { 0 };
-                self.set_memory(p3.as_pos(&self), out);
+                self.set_memory(p3.as_pos(self), out);
                 self.pointer += 4;
             }
             Instruction::Equals(p1, p2, p3) => {
-                let val1 = p1.value(&self);
-                let val2 = p2.value(&self);
+                let val1 = p1.value(self);
+                let val2 = p2.value(self);
                 let out = if val1 == val2 { 1 } else { 0 };
-                self.set_memory(p3.as_pos(&self), out);
+                self.set_memory(p3.as_pos(self), out);
                 self.pointer += 4;
             }
             Instruction::RelativeBase(p1) => {
-                let val = p1.value(&self);
+                let val = p1.value(self);
                 self.relative_base += val;
                 self.pointer += 2;
             }
             Instruction::Stop => {
                 self.halted = true;
-                return ();
             }
         }
     }

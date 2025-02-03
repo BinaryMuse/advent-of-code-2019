@@ -5,7 +5,7 @@ pub(crate) fn run(input: String) {
     computer.memory[1] = 12;
     computer.memory[2] = 2;
     computer.run();
-    let val = computer.memory.get(0).unwrap();
+    let val = computer.memory.first().unwrap();
     println!("Part 1: {}", *val);
 
     for noun in 0..=99 {
@@ -14,7 +14,7 @@ pub(crate) fn run(input: String) {
             computer.memory[1] = noun;
             computer.memory[2] = verb;
             computer.run();
-            let val = computer.memory.get(0).unwrap();
+            let val = computer.memory.first().unwrap();
             if *val == 19690720 {
                 let result = 100 * noun + verb;
                 println!("Part 2: {}", result);
