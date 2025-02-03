@@ -1,5 +1,5 @@
-mod instruction;
-mod memory;
+pub mod instruction;
+pub mod memory;
 
 use std::collections::VecDeque;
 
@@ -11,7 +11,10 @@ pub(crate) struct Computer {
     pub memory: Memory,
     pointer: usize,
     input: VecDeque<isize>,
-    output: Vec<isize>,
+    output: VecDeque<isize>,
+    yeild_on_output: bool,
+    yielded: bool,
+    halted: bool,
 }
 
 impl Computer {
@@ -20,30 +23,50 @@ impl Computer {
             memory,
             pointer: 0,
             input: VecDeque::new(),
-            output: vec![],
+            output: VecDeque::new(),
+            yeild_on_output: false,
+            yielded: false,
+            halted: false,
         }
+    }
+
+    pub fn set_yield_on_output(&mut self, val: bool) {
+        self.yeild_on_output = val;
     }
 
     pub fn set_input(&mut self, input: Vec<isize>) {
         self.input = input.into();
     }
 
-    pub fn get_output(&self) -> &[isize] {
-        &self.output
+    pub fn push_input(&mut self, input: isize) {
+        self.input.push_back(input);
+    }
+
+    pub fn get_output(&self) -> Vec<isize> {
+        self.output.iter().map(|n| *n).collect()
+    }
+
+    pub fn next_output(&mut self) -> Option<isize> {
+        self.output.pop_front()
+    }
+
+    pub fn is_halted(&self) -> bool {
+        self.halted
     }
 
     pub fn run(&mut self) {
+        self.yielded = false;
         loop {
+            if self.yielded || self.halted {
+                return;
+            }
+
             let mem_val = *self.memory.get(self.pointer).unwrap() as usize;
             let opcode: Opcode = mem_val.into();
             let mem_slice = &self.memory[self.pointer..];
             let Some(instruction) = Instruction::from_opcode(opcode, mem_slice.iter()) else {
                 panic!("Invalid opcode")
             };
-
-            if instruction == Instruction::Stop {
-                return ();
-            }
 
             self.execute_instr(instruction);
         }
@@ -66,14 +89,23 @@ impl Computer {
                 self.pointer += 4;
             }
             Instruction::Input(p1) => {
-                let value = self.input.pop_front().unwrap();
-                self.memory[p1.as_pos()] = value;
-                self.pointer += 2;
+                if let Some(value) = self.input.pop_front() {
+                    self.memory[p1.as_pos()] = value;
+                    self.pointer += 2;
+                } else {
+                    self.yielded = true;
+                    return ();
+                }
             }
             Instruction::Output(p1) => {
                 let value = p1.value(&self.memory);
-                self.output.push(value);
+                self.output.push_back(value);
                 self.pointer += 2;
+
+                if self.yeild_on_output {
+                    self.yielded = true;
+                    return ();
+                }
             }
             Instruction::JumpIfTrue(p1, p2) => {
                 let value = p1.value(&self.memory);
@@ -105,7 +137,10 @@ impl Computer {
                 self.memory[p3.as_pos()] = out;
                 self.pointer += 4;
             }
-            Instruction::Stop => return (),
+            Instruction::Stop => {
+                self.halted = true;
+                return ();
+            }
         }
     }
 }

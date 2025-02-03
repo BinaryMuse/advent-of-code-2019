@@ -1,9 +1,9 @@
 use clap::Parser;
 use std::{error::Error, fs, path::Path};
 
-mod computer;
+pub mod computer;
 mod days;
-mod util;
+pub mod util;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -23,6 +23,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         "02" => days::day02::run(input),
         "05" => days::day05::run(input),
         "06" => days::day06::run(input),
+        "07" => days::day07::run(input),
         _ => panic!("Day not implemented"),
     };
 
