@@ -1,4 +1,4 @@
-use super::memory::Memory;
+use super::{memory::Memory, Computer};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum Instruction {
@@ -10,6 +10,7 @@ pub(crate) enum Instruction {
     JumpIfFalse(Param, Param),
     LessThan(Param, Param, Param),
     Equals(Param, Param, Param),
+    RelativeBase(Param),
     Stop,
 }
 
@@ -44,6 +45,9 @@ impl Instruction {
         } else if opcode.code == 8 {
             let (p1, p2, p3) = Self::get_params3(&opcode.param_modes, mem);
             Some(Self::Equals(p1, p2, p3))
+        } else if opcode.code == 9 {
+            let p1 = Self::get_params1(&opcode.param_modes, mem);
+            Some(Self::RelativeBase(p1))
         } else if opcode.code == 99 {
             Some(Self::Stop)
         } else {
@@ -76,8 +80,10 @@ impl Instruction {
         let mode = *mode.unwrap_or(&0);
         if mode == 0 {
             Param::Pos(*mem.unwrap() as usize)
-        } else {
+        } else if mode == 1 {
             Param::Imm(*mem.unwrap())
+        } else {
+            Param::Rel(*mem.unwrap())
         }
     }
 }
@@ -117,20 +123,26 @@ impl From<usize> for Opcode {
 pub(crate) enum Param {
     Pos(usize),
     Imm(isize),
+    Rel(isize),
 }
 
 impl Param {
-    pub fn value(&self, memory: &Memory) -> isize {
+    pub fn value(&self, computer: &Computer) -> isize {
         match self {
-            Self::Pos(idx) => memory[*idx],
+            Self::Pos(idx) => *computer.memory.get(*idx).unwrap_or(&0),
             Self::Imm(num) => *num,
+            Self::Rel(idx) => {
+                let idx = computer.relative_base + idx;
+                *computer.memory.get(idx as usize).unwrap_or(&0)
+            }
         }
     }
 
-    pub fn as_pos(&self) -> usize {
+    pub fn as_pos(&self, computer: &Computer) -> usize {
         match self {
             Self::Pos(idx) => *idx,
             Self::Imm(num) => *num as usize,
+            Self::Rel(idx) => (computer.relative_base + idx) as usize,
         }
     }
 }

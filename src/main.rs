@@ -24,6 +24,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         "05" => days::day05::run(input),
         "06" => days::day06::run(input),
         "07" => days::day07::run(input),
+        "09" => days::day09::run(input),
         _ => panic!("Day not implemented"),
     };
 
